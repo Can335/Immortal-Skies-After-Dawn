@@ -1,8 +1,7 @@
 [package]
-name = "canja/repo"
-version = "0.1.0"
+name = "ffrostflame/bytenet"
+version = "0.4.6"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 
 [dependencies]
-bytenet = "ffrostflame/bytenet@0.4.6"
