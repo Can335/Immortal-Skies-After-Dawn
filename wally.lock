@@ -5,11 +5,16 @@ registry = "test"
 [[package]]
 name = "canja/repo"
 version = "0.1.0"
-dependencies = [["bytenet", "ffrostflame/bytenet@0.4.6"], ["signal", "sleitnick/signal@2.0.1"]]
+dependencies = [["bytenet", "ffrostflame/bytenet@0.4.6"], ["signal", "sleitnick/signal@2.0.1"], ["spring", "nightcycle/spring@1.0.0"]]
 
 [[package]]
 name = "ffrostflame/bytenet"
 version = "0.4.6"
+dependencies = []
+
+[[package]]
+name = "nightcycle/spring"
+version = "1.0.0"
 dependencies = []
 
 [[package]]
