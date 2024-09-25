@@ -9,13 +9,19 @@ KeyClass.__index = KeyClass
 
 local KeyDictionary = {
 
-[Enum.KeyCode.W] = {Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_allowed = nil ::boolean, type = nil :: "Hold"|"Push", Signal = nil}
+[Enum.KeyCode.W] = {Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_allowed = nil ::boolean, type = nil :: "Hold"|"Push", SignalActivate = nil,SignalDeactivate =nil}
 
 }
 
 type NewInput = <T> (Key: T, Debounce:T) -> ({any})
 
+function DisableKeyActive(Key)
 
+ 
+KeyClass[Key].Active_key = false
+KeyClass[Key].SignalDeactivate:Fire()
+
+end
 
 function GrabKeyIndexValues(Index : {[KeyCode]: {any}})
     --[[ Planned]]
@@ -43,7 +49,7 @@ end
 function KeyClass:ProcessInput(tab : {any})
     
 
-if tab.Active_allowed == false then
+if tab.Active_allowed == false or tab.Active_key == true then
  return
     end
 
@@ -64,6 +70,9 @@ return
     end
 
 end
+
+
+
 
 end
 
