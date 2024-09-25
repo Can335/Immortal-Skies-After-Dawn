@@ -7,20 +7,140 @@ local KeyClass = {}
 
 KeyClass.__index = KeyClass
 
+--[[
+KeyDictionary 
+@Keys Dependency_Disable: KeyCode, Dependency_crucialblock : KeyCode, Condition_Blocking :() -> boolean, Active_Key : boolean, Active_Allowed : boolean, type : "Push" | "Hold", SignalActivate:Signal, SignalDeactivate :Signal
+]]
+
+local KeySettingDictionary = {
+
+["MoveFoward"] = Enum.KeyCode.W
+
+}
+
 local KeyDictionary = {
 
-[Enum.KeyCode.W] = {Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_allowed = nil ::boolean, type = nil :: "Hold"|"Push", SignalActivate = nil,SignalDeactivate =nil}
+[Enum.KeyCode.W] = {Action = "MoveFoward",Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_Allowed = nil ::boolean, type = nil :: "Hold"|"Push", Signal = nil}
 
 }
 
 type NewInput = <T> (Key: T, Debounce:T) -> ({any})
 
-function DisableKeyActive(Key)
 
+function ChangeKeySettings(Changes: {[string]: any},CompareChanges: {[string]: any})
+    
+local Temp = {}
+local AlreadyChecked = {}
+
+for index, value in pairs(Changes) do
+    
+local OldKey = CompareChanges[index]
+local NewKey = value
+local Dependencydisable = {}
+local crucialblocking = {}
+local OtherKeyWorld93
+local CloneTableNew
+
+
+--
+for index0, value0 in pairs(CompareChanges) do
+    
+if value0 == NewKey  then
+OtherKeyWorld93 = Changes[index0]
+table.insert(AlreadyChecked, Changes[index0])
+    end
+
+end
+--
+
+
+--
+    for index1, value1 in ipairs(KeyDictionary) do
+task.wait()        
+--1
+
+for index2, value2 in ipairs(value1.Dependency_Disable) do
+    
+if table.find(AlreadyChecked,value2) then
+    break
+end
+
+    if value2 == NewKey then
+
+        value2 = Enum.KeyCode.World93
+        table.insert(Dependencydisable, value2)
+elseif value2 == OldKey then
+    value2 = NewKey
+    end
+
+end
+
+--1
+task.wait()
+--2
+
+for index3, value3 in ipairs(value1.Dependency_crucialblock) do
+    
+    if table.find(AlreadyChecked,value3) then
+        break
+    end
+
+    if value3 == NewKey then
+
+        value3 = Enum.KeyCode.World93
+        table.insert(crucialblocking, value3)
+        elseif value3 == OldKey then
+            value3 = NewKey
+    end
+
+end
+
+--2
+
+task.wait()
+
+
+
+
+    end
+--
+
+
+
+--1
+
+    for index4, value4 in ipairs(Dependencydisable) do
+    
+value4 = OtherKeyWorld93
+
+    end
+--1
+
+--2
+    for index5, value5 in ipairs(Dependencydisable) do
+    
+        value5 = OtherKeyWorld93
+        
+            end
+--2
+
+task.wait()
+
+CloneTableNew = table.clone(KeyDictionary[OldKey])
+
+        end
+
+
+end
+
+
+function DisableKeyActive(Key: KeyCode)
+
+    assert(typeof(KeyDictionary[Key]) == "table", Key "/n is not a valid member of KeyDictionary")
  
-KeyClass[Key].Active_key = false
-KeyClass[Key].SignalDeactivate:Fire()
-
+    KeyDictionary[Key].Active_key = false
+    KeyDictionary[Key].Signal:Fire(false) --False mean deactivate in the listner module
+return true
 end
 
 function GrabKeyIndexValues(Index : {[KeyCode]: {any}})
@@ -33,6 +153,7 @@ end
 function KeyClass.Main()
 
 local self = setmetatable({}, KeyClass)
+self.KeyUseAllowed = true
 
 return self
 end
@@ -49,7 +170,7 @@ end
 function KeyClass:ProcessInput(tab : {any})
     
 
-if tab.Active_allowed == false or tab.Active_key == true then
+if tab.Active_Allowed == false or tab.Active_key == true then
  return
     end
 
