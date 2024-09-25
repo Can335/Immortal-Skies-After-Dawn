@@ -13,7 +13,7 @@ local KeyDictionary = {
 
 }
 
-type NewInput = <T> (Key: T, Debounce:T) -> (Keycode, Key, Active, Condition_Crucial, Condition_Blocking, Dependency_Disable, Active_Key, Toggle_Type)
+type NewInput = <T> (Key: T, Debounce:T) -> ({any})
 
 
 
@@ -36,6 +36,34 @@ function KeyClass:NewInput<T>(Key:T, Debounce:T)
 
     assert(typeof(KeyDictionary[Key]) == "table", Key .. "Is Not a Valid member of Keydictionary")
 
+    return KeyDictionary[Key]
+
+end
+
+function KeyClass:ProcessInput(tab : {any})
+    
+
+if tab.Active_allowed == false then
+ return
+    end
+
+
+
+for index, value in tab.Dependency_crucialblock do
+        task.wait()
+    if KeyClass[value].Active_key == true then
+         return 
+    end
+
+end
+
+for index, value in tab.Condition_Blocking do
+    task.wait()
+if value() == true then
+return
+    end
+
+end
 
 end
 
