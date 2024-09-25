@@ -13,6 +13,31 @@ local KeyDictionary = {
 
 }
 
+type NewInput = <T> (Key: T, Debounce:T) -> (Keycode, Key, Active, Condition_Crucial, Condition_Blocking, Dependency_Disable, Active_Key, Toggle_Type)
+
+
+
+function GrabKeyIndexValues(Index : {[KeyCode]: {any}})
+    --[[ Planned]]
+return 
+
+end
+
+
+function KeyClass.Main()
+
+local self = setmetatable({}, KeyClass)
+
+return self
+end
+
+
+function KeyClass:NewInput<T>(Key:T, Debounce:T)
+
+    assert(typeof(KeyDictionary[Key]) == "table", Key .. "Is Not a Valid member of Keydictionary")
+
+
+end
 
 
 return KeyClass
