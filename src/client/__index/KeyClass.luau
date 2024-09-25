@@ -20,7 +20,7 @@ local KeySettingDictionary = {
 
 local KeyDictionary = {
 
-[Enum.KeyCode.W] = {Action = "MoveFoward",Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_Allowed = nil ::boolean, type = nil :: "Hold"|"Push", Signal = nil}
+[Enum.KeyCode.W] = {keysignore = {},Action = "MoveFoward",Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_Allowed = nil ::boolean, type = nil :: "Hold"|"Push", Signal = nil}
 
 }
 
@@ -32,6 +32,27 @@ function ChangeKeySettings(Changes: {[string]: any},CompareChanges: {[string]: a
 local Temp = {}
 local AlreadyChecked = {}
 
+
+for index8, value8 in pairs(Changes) do
+
+    for index9, value9 in pairs(KeyDictionary) do
+    
+if index8 == value9.Action then
+    
+local tempclone = table.clone(value9)
+task.wait()
+KeyDictionary[index9] =nil
+task.wait()
+KeyDictionary[value8] = tempclone
+
+end
+
+    end
+
+end
+
+
+
 for index, value in pairs(Changes) do
     
 local OldKey = CompareChanges[index]
@@ -40,7 +61,7 @@ local Dependencydisable = {}
 local crucialblocking = {}
 local OtherKeyWorld93
 local CloneTableNew
-
+local OptionalClone
 
 --
 for index0, value0 in pairs(CompareChanges) do
@@ -59,11 +80,11 @@ end
 task.wait()        
 --1
 
+
+
 for index2, value2 in ipairs(value1.Dependency_Disable) do
     
-if table.find(AlreadyChecked,value2) then
-    break
-end
+
 
     if value2 == NewKey then
 
@@ -126,7 +147,20 @@ value4 = OtherKeyWorld93
 
 task.wait()
 
-CloneTableNew = table.clone(KeyDictionary[OldKey])
+
+
+
+
+
+        end
+
+        for index, value in ipairs(KeySettingDictionary) do
+            
+if Changes[index] then
+    
+value = Changes[index]
+
+end
 
         end
 
