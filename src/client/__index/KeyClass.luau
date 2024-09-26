@@ -15,7 +15,9 @@ KeyDictionary
 local KeySettingDictionary = {
 ["BER"] = Enum.KeyCode.D,
 ["BED"] = Enum.KeyCode.E,
-["BE"] = Enum.KeyCode.B
+["BE"] = Enum.KeyCode.B,
+["BEDA"] = Enum.KeyCode.N,
+["BEFA"] = Enum.KeyCode.I
 }
 
 local KeyDictionary = {
@@ -23,7 +25,9 @@ local KeyDictionary = {
 --[Enum.KeyCode.W] = {keysignore = {},Action = "MoveFoward",Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_Allowed = nil ::boolean, type = nil :: "Hold"|"Push", Signal = nil},
 [Enum.KeyCode.E] = {Action = "BED",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}},
 [Enum.KeyCode.B] = {Action = "BE",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}},
-[Enum.KeyCode.D] = {Action = "BER",Dependency_Disable = {Enum.KeyCode.E},Dependency_crucialblock = {Enum.KeyCode.E}}
+[Enum.KeyCode.D] = {Action = "BER",Dependency_Disable = {Enum.KeyCode.E},Dependency_crucialblock = {Enum.KeyCode.E}},
+[Enum.KeyCode.N] = {Action = "BEDA",Dependency_Disable = {Enum.KeyCode.B},Dependency_crucialblock = {Enum.KeyCode.B}},
+[Enum.KeyCode.I] = {Action = "BEFA",Dependency_Disable = {Enum.KeyCode.N},Dependency_crucialblock = {Enum.KeyCode.B}}
 }
 
 type NewInput = <T> (Key: T, Debounce:T) -> ({any})
@@ -35,6 +39,7 @@ local Temp = {}
 local AlreadyCheckedWorld93 = {}
 local AlreadyCheckedNormal = {}
 local AlreadyCheckedNormalNew = {}
+local World93Temp_Container = {}
 
 print(KeyDictionary)
 
@@ -75,7 +80,9 @@ local AlreadyCheckedNormalNewi = {}
 local wrapper = {AlreadyCheckedNormali,AlreadyCheckedNormalNewi,AlreadyCheckedWorld93i}
 
 for index8, value8 in pairs(Changes) do
-    
+
+    task.wait()
+
 local NewKeyIndex = value8
 local OldKeyIndex = CompareChanges[index8]
 local OtherKeyWorld93Index
@@ -84,7 +91,9 @@ local CloneTabOptional
 local Freeze = false
 
 for index11, value11 in ipairs(wrapper) do
-    
+print(table.find(value11, NewKeyIndex))
+        task.wait()
+
     if table.find(value11, NewKeyIndex) or table.find(value11, OldKeyIndex) or table.find(value11, OtherKeyWorld93Index) then
     Freeze = true
 end
@@ -93,7 +102,9 @@ end
 
 
 for index9, value9 in pairs(CompareChanges) do
-    
+
+        task.wait()
+
     if value9 == NewKeyIndex then
 
 OtherKeyWorld93Index = Changes[index9]
@@ -125,56 +136,116 @@ end
 
 table.insert(AlreadyCheckedNormali,OldKeyIndex)
 
-table.insert(AlreadyCheckedNormalNew,NewKeyIndex)
+table.insert(AlreadyCheckedNormalNewi,NewKeyIndex)
 
 table.insert(AlreadyCheckedWorld93i,OtherKeyWorld93Index)
-print(AlreadyCheckedNormalNew)
+print(AlreadyCheckedNormalNewi)
 end
 
 
 
 
 for index, value in pairs(Changes) do
-    
+
+        task.wait()
+print(index, value, "IMPORTANT")
 local OldKey = CompareChanges[index]
 local NewKey = value
-local Dependencydisable = {}
-local crucialblocking = {}
-local OtherKeyWorld93
-local CloneTableNew
-local OptionalClone
 
+local Overlapp_PreventKey
+local Frezze_New_key_Variable = false
+local Frezze_Old_Key_Variable = false
+local Frezze_Overlapp_Variable = false
+local Check_Wrapper1 = {AlreadyCheckedNormalNew, AlreadyCheckedNormal,AlreadyCheckedWorld93}
 --
+
+local Old_Variable_Used = false
+local New_Variable_Used = false
+local UsedWorld93 = false
+
+print(World93Temp_Container, "CONTEINR")
+print(Check_Wrapper1)
+
 for index0, value0 in pairs(CompareChanges) do
-    
+
+        task.wait()
+
 if value0 == NewKey  then
-OtherKeyWorld93 = Changes[index0]
-table.insert(AlreadyCheckedWorld93, Changes[index0])
+Overlapp_PreventKey = Changes[index0]
+print(Overlapp_PreventKey, "INDEX")
     end
 
 end
 --
+for index12, value12 in ipairs(Check_Wrapper1) do
+
+        task.wait()
+
+if table.find(value12, NewKey) ~= nil and value12 == AlreadyCheckedNormalNew  then
+print("FREEZING NEW")
+Frezze_New_key_Variable = true
+
+end
+
+if table.find(value12, OldKey) ~= nil and value12 == AlreadyCheckedNormal then
+    print("FREEZING OLD")
+Frezze_Old_Key_Variable = true
+end
+
+if table.find(value12, Overlapp_PreventKey) ~= nil and value12 == AlreadyCheckedWorld93 then
+    print("FREEZING WRLD")
+    Frezze_Overlapp_Variable = true
+end
+
+   end 
 
 
+print(Frezze_New_key_Variable, Frezze_Old_Key_Variable,Frezze_Overlapp_Variable)
 --
-    for index1, value1 in pairs(KeyDictionary) do
+    for Member_KeyDictionary, Key_Value in pairs(KeyDictionary) do
 task.wait()        
 --1
 
 
 
-for index2, value2 in ipairs(value1.Dependency_Disable) do
+for MemberKey, To_Change_Enum_Keys in ipairs(Key_Value.Dependency_Disable) do
+    
+    task.wait()
+   
+
+
+    if To_Change_Enum_Keys == OldKey   and Frezze_New_key_Variable == false  then
+        New_Variable_Used = true
+        Key_Value.Dependency_Disable[MemberKey] = NewKey
+        print("Changing2")
+   elseif To_Change_Enum_Keys == NewKey and Frezze_Overlapp_Variable == false  then
+
+    print("Changing1")
+UsedWorld93 = true
+        Key_Value.Dependency_Disable[MemberKey] = Overlapp_PreventKey
+
+table.insert(World93Temp_Container, Overlapp_PreventKey)
+
+    for Before_Change_Index, Key_Before_Change in pairs(CompareChanges) do
+
+            task.wait()
+    
+    if Key_Before_Change == Overlapp_PreventKey  then
+      --value1.Dependency_Disable[index2] = Changes[index02]
+    print(Overlapp_PreventKey, "INDEX")
+ table.insert(World93Temp_Container, Changes[Before_Change_Index])
+ table.insert(AlreadyCheckedNormalNew,Overlapp_PreventKey)
+        end
     
 
 
-    if value2 == NewKey and table.find(AlreadyCheckedNormalNew,NewKey) == nil  then
-print("Changing1")
-        value1.Dependency_Disable[index2] = OtherKeyWorld93
-        table.insert(Dependencydisable, value2)
-elseif value2 == OldKey and  table.find(AlreadyCheckedNormal,OldKey) ==nil then
-    value1.Dependency_Disable[index2] = NewKey
-    print("Changing2")
     end
+
+
+
+    end
+
+
 
 end
 
@@ -182,16 +253,35 @@ end
 task.wait()
 --2
 
-for index3, value3 in ipairs(value1.Dependency_crucialblock) do
+for Member_Key1, Enum_To_Change1 in ipairs(Key_Value.Dependency_crucialblock) do
     
-   
+    task.wait()
+    if Enum_To_Change1 == OldKey   and Frezze_New_key_Variable == false  then
+        New_Variable_Used = true
+        Key_Value.Dependency_crucialblock[Member_Key1] = NewKey
+        print("Changing2")
+   elseif Enum_To_Change1 == NewKey and Frezze_Overlapp_Variable == false  then
+print("Changing1")
+UsedWorld93 = true
+        Key_Value.Dependency_crucialblock[Member_Key1] = Overlapp_PreventKey
 
-    if value3 == NewKey and  table.find(AlreadyCheckedWorld93,NewKey) == nil then
+table.insert(World93Temp_Container, Overlapp_PreventKey)
 
-        value1.Dependency_crucialblock[index3] = Enum.KeyCode.World93
-        table.insert(crucialblocking, value3)
-        elseif value3 == OldKey and  table.find(AlreadyCheckedNormal,OldKey) == nil then
-            value1.Dependency_crucialblock[index3] = NewKey
+        for Index_Before_Change1, Key_Before_Change1 in pairs(CompareChanges) do
+
+            task.wait()
+    
+    if Key_Before_Change1 == Overlapp_PreventKey  then
+      --value1.Dependency_Disable[index2] = Changes[index0]
+    print(Overlapp_PreventKey, "INDEX")
+ table.insert(World93Temp_Container, Changes[Index_Before_Change1])
+ table.insert(AlreadyCheckedNormalNew,Overlapp_PreventKey)
+        end
+    
+    end
+
+
+
     end
 
 end
@@ -210,7 +300,7 @@ task.wait()
 
 --1
 
-    for index4, value4 in ipairs(Dependencydisable) do
+--[[    for index4, value4 in ipairs(Dependencydisable) do
     
 value4 = OtherKeyWorld93
 
@@ -222,18 +312,33 @@ value4 = OtherKeyWorld93
     
         value5 = OtherKeyWorld93
         
-            end
+            end]]
 --2
 
 task.wait()
 
-if OtherKeyWorld93 ~= nil then
-    table.insert(AlreadyCheckedWorld93,OtherKeyWorld93)
+if UsedWorld93 ~= false then
+    table.insert(AlreadyCheckedWorld93,NewKey)
+for Member_of_Container, Enum_Key in ipairs(World93Temp_Container) do
+
+local savedVariable = Enum_Key
+table.remove(World93Temp_Container,table.find(World93Temp_Container,Enum_Key))
+task.wait()
+    table.insert(AlreadyCheckedWorld93,savedVariable)
 end
 
-table.insert(AlreadyCheckedNormal,OldKey)
-table.insert(AlreadyCheckedNormalNew,NewKey)
+end
 
+if New_Variable_Used ~= false then
+    table.insert(AlreadyCheckedNormalNew,NewKey)
+end
+
+
+if Old_Variable_Used ~= false then
+    table.insert(AlreadyCheckedNormal,Old_Variable_Used)
+end
+
+print(AlreadyCheckedNormal , "NORMAL", AlreadyCheckedWorld93 ,"WRLD", AlreadyCheckedNormalNew, "NEW")
 
 
 
@@ -325,6 +430,9 @@ function KeyClass:ChangeKeys(inputOld:{[any]:any},inputnew: {[any]:any})
     print(KeyDictionary)
     print(KeyDictionary[Enum.KeyCode.E], "E")
     print(KeyDictionary[Enum.KeyCode.D], "d")
+    print(KeyDictionary[Enum.KeyCode.N], "n")
+    print(KeyDictionary[Enum.KeyCode.B], "b")
+    print(KeyDictionary[Enum.KeyCode.Tab], "tab")
     return
     end
     
