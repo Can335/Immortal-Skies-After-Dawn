@@ -1,9 +1,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
+local UserInputService = game:GetService("UserInputService")
 local Signal = require(ReplicatedStorage.Packages.signal)
 
 
 local KeyClass = {}
+
+local KeyUseAllowed = false
 
 KeyClass.__index = KeyClass
 
@@ -23,11 +25,11 @@ local KeySettingDictionary = {
 local KeyDictionary = {
 
 --[Enum.KeyCode.W] = {keysignore = {},Action = "MoveFoward",Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_Allowed = nil ::boolean, type = nil :: "Hold"|"Push", Signal = nil},
-[Enum.KeyCode.E] = {Action = "BED",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}},
-[Enum.KeyCode.B] = {Action = "BE",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}},
-[Enum.KeyCode.D] = {Action = "BER",Dependency_Disable = {Enum.KeyCode.E},Dependency_crucialblock = {Enum.KeyCode.E}},
-[Enum.KeyCode.N] = {Action = "BEDA",Dependency_Disable = {Enum.KeyCode.B},Dependency_crucialblock = {Enum.KeyCode.B}},
-[Enum.KeyCode.I] = {Action = "BEFA",Dependency_Disable = {Enum.KeyCode.N},Dependency_crucialblock = {Enum.KeyCode.B}}
+[Enum.KeyCode.E] = {Action = "BED",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}, Signal =  Instance.new("BindableEvent"), Active_Allowed = true, Active_key = false},
+[Enum.KeyCode.B] = {Action = "BE",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false},
+[Enum.KeyCode.D] = {Action = "BER",Dependency_Disable = {Enum.KeyCode.E},Dependency_crucialblock = {Enum.KeyCode.E}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false},
+[Enum.KeyCode.N] = {Action = "BEDA",Dependency_Disable = {Enum.KeyCode.B},Dependency_crucialblock = {Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false},
+[Enum.KeyCode.I] = {Action = "BEFA",Dependency_Disable = {Enum.KeyCode.N},Dependency_crucialblock = {Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false}
 }
 
 type NewInput = <T> (Key: T, Debounce:T) -> ({any})
@@ -360,66 +362,137 @@ end
 end
 
 
-function DisableKeyActive(Key: KeyCode)
+function ChangeKeyState(Key: KeyCode, bool:boolean)
 
-    assert(typeof(KeyDictionary[Key]) == "table", Key "/n is not a valid member of KeyDictionary")
+    assert(typeof(KeyDictionary[Key]) == "table", "%s is not a valid member of KeyDictionary")
  
-    KeyDictionary[Key].Active_key = false
-    KeyDictionary[Key].Signal:Fire(false) --False mean deactivate in the listner module
+    KeyDictionary[Key].Active_key = bool
+    KeyDictionary[Key].Signal:Fire(bool) --False mean deactivate in the listner module
 return true
 end
 
-function GrabKeyIndexValues(Index : {[KeyCode]: {any}})
-    --[[ Planned]]
-return 
 
-end
 
 
 function KeyClass.Main()
 
 local self = setmetatable({}, KeyClass)
-self.KeyUseAllowed = true
+KeyUseAllowed = true
 
 return self
 end
 
 
 function KeyClass:NewInput<T>(Key:T, Debounce:T)
+    print(KeyUseAllowed , "KEYUSE")
+print(self , "SELF")
+if KeyUseAllowed == false then
+    print("NOT ALLOWED")
+    return 
+end
 
-    assert(typeof(KeyDictionary[Key]) == "table", Key .. "Is Not a Valid member of Keydictionary")
+  
+assert(typeof(KeyDictionary[Key]) == "table",  " %s Is Not a Valid member of Keydictionary")
+
+if KeyDictionary[Key] == nil then return end
+
+task.wait()
+if KeyDictionary[Key].Active_Allowed == false then
+
+    return
+end
+
+if KeyDictionary[Key].Active_key == true then
+    
+KeyDictionary[Key].Active_key = false
+KeyUseAllowed = false
+KeyClass:ProcessInput(KeyDictionary[Key], false)
+
+else
+    KeyUseAllowed = false
+    KeyClass:ProcessInput(KeyDictionary[Key],true)
+    KeyDictionary[Key].Active_key = true
+
+    print("TURNIN OFF")
+end
+
+
 
     return KeyDictionary[Key]
 
 end
 
-function KeyClass:ProcessInput(tab : {any})
+function KeyClass:ProcessInput(tab : {any},Active_Bool:boolean)
+    
+print("PROCESSING INPUT")
+
+
+if tab.Dependency_crucialblock ~= nil then
+    
+    for index, value in ipairs(tab.Dependency_crucialblock) do
+        task.wait()
+    if KeyDictionary[value].Active_key == true then
+
+if Active_Bool == true then
+    print("GOING BACK")
+    return 
+
+end
+
+
+    end
+
+end
+
+
+end
+
+
+
+
+if tab.Condition_Blocking ~= nil then
+    
+    for index, value in ipairs(tab.Condition_Blocking) do
+        task.wait()
+    if value() == true and Active_Bool == true then
+    return
+        end
+    
+    end
+    
+    
     
 
-if tab.Active_Allowed == false or tab.Active_key == true then
- return
-    end
-
-
-
-for index, value in tab.Dependency_crucialblock do
-        task.wait()
-    if KeyClass[value].Active_key == true then
-         return 
-    end
-
-end
-
-for index, value in tab.Condition_Blocking do
-    task.wait()
-if value() == true then
-return
-    end
-
 end
 
 
+if Active_Bool == true then
 
+    if tab.Dependency_Disable ~= nil then
+        
+        for index, value in ipairs(tab.Dependency_Disable) do
+    
+            KeyDictionary[value].Active_key = false
+            KeyDictionary[value].Signal:Fire()
+            
+            end
+
+    end
+
+ 
+
+
+end
+
+
+task.wait()
+
+--tab.Signal:Fire()
+print(KeyDictionary[Enum.KeyCode.B])
+task.wait(.35)
+KeyUseAllowed = true
+
+print(KeyUseAllowed)
 
 end
 
@@ -436,6 +509,26 @@ function KeyClass:ChangeKeys(inputOld:{[any]:any},inputnew: {[any]:any})
     return
     end
     
+function KeyClass.StartBinding()
+    
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if KeyUseAllowed == true then
+        
+        if KeyDictionary[input.KeyCode] ~= nil then
+            print("FIRING")
+        KeyClass:NewInput(input.KeyCode,0)
+        
+        elseif KeyDictionary[input.UserInputType] ~= nil then
+            print("FIRING")
+            KeyClass:NewInput(input.UserInputType,0)
+        end
+
+    end
+
+
+end)
+
+end
 
 
 return KeyClass

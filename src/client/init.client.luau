@@ -15,3 +15,7 @@ bedc:ChangeKeys({
     ["BEDA"] = Enum.KeyCode.B,
     ["BEFA"] = Enum.KeyCode.Tab
 })
+
+task.wait()
+
+key.StartBinding()
