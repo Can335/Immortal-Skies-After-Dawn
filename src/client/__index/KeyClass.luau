@@ -108,6 +108,7 @@ end
 local KeyClass = {}
 
 local KeyUseAllowed = false
+local ThreadManager = ThreadPool.New()
 
 KeyClass.__index = KeyClass
 
@@ -480,32 +481,36 @@ function KeyClass.Main()
 
 local self = setmetatable({}, KeyClass)
 KeyUseAllowed = true
-self.ThreadManager = ThreadPool.New()
+
 
 return self
 end
 
 
-function KeyClass:NewInput<T>(Key:T, Debounce:T)
+function KeyClass:NewInput<T>(Key:T)
+
+    assert(typeof(KeyDictionary[Key]) == "table",  " %s Is Not a Valid member of Keydictionary")
+
+    if KeyDictionary[Key] == nil then 
+        
+         return
+   end
+   
+
     print(KeyUseAllowed , "KEYUSE")
-print(self , "SELF")
-if KeyUseAllowed == false then
-    self.ThreadManager:SignalCurrentThreadFinished()
+
+if KeyUseAllowed == false and KeyDictionary[Key].Active_key == false then
+    
     print("NOT ALLOWED")
     return 
 end
 
   
-assert(typeof(KeyDictionary[Key]) == "table",  " %s Is Not a Valid member of Keydictionary")
 
-if KeyDictionary[Key] == nil then 
-     self.ThreadManager:SignalCurrentThreadFinished()
-      return
-end
 
 task.wait()
 if KeyDictionary[Key].Active_Allowed == false then
-    self.ThreadManager:SignalCurrentThreadFinished()
+    
     return
 end
 
@@ -534,7 +539,7 @@ function KeyClass:ProcessInput(tab : {any},Active_Bool:boolean)
 print("PROCESSING INPUT")
 
 
-if tab.Dependency_crucialblock ~= nil then
+if tab.Dependency_crucialblock ~= nil and tab.Active_Key == false then
     
     for index, value in ipairs(tab.Dependency_crucialblock) do
         task.wait()
@@ -542,7 +547,7 @@ if tab.Dependency_crucialblock ~= nil then
 
 if Active_Bool == true then
     print("GOING BACK")
-    self.ThreadManager:SignalCurrentThreadFinished()
+  
     return 
 
 end
@@ -558,12 +563,12 @@ end
 
 
 
-if tab.Condition_Blocking ~= nil then
+if tab.Condition_Blocking ~= nil and Active_Bool == true then
     
-    for index, value in ipairs(tab.Condition_Blocking) do
+    for index, value in ipairs(tab.Condition_Blocking)  do
         task.wait()
     if value() == true and Active_Bool == true then
-        self.ThreadManager:SignalCurrentThreadFinished()
+        
     return
         end
     
@@ -579,7 +584,7 @@ if Active_Bool == true then
 
     if tab.Dependency_Disable ~= nil then
         
-        for index, value in ipairs(tab.Dependency_Disable) do
+        for index, value in ipairs(tab.Dependency_Disable)  do
     
             KeyDictionary[value].Active_key = false
             KeyDictionary[value].Signal:Fire()
@@ -598,10 +603,17 @@ task.wait()
 
 --tab.Signal:Fire()
 print(KeyDictionary[Enum.KeyCode.B])
-task.wait(.35)
-KeyUseAllowed = true
+if Active_Bool == false then
+    ThreadManager:SignalCurrentThreadFinished()
+    KeyUseAllowed = true
+    else
+        task.wait(.35)
 
-print(KeyUseAllowed)
+        KeyUseAllowed = true
+        
+        print(KeyUseAllowed)
+end
+
 
 end
 
@@ -618,22 +630,45 @@ function KeyClass:ChangeKeys(inputOld:{[any]:any},inputnew: {[any]:any})
     return
     end
     
-function KeyClass.StartBinding()
+function KeyClass:StartBinding()
     
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if KeyUseAllowed == true then
         
         if KeyDictionary[input.KeyCode] ~= nil then
             print("FIRING")
-        KeyClass:NewInput(input.KeyCode,0)
+        KeyClass:NewInput(input.KeyCode)
         
         elseif KeyDictionary[input.UserInputType] ~= nil then
             print("FIRING")
-            KeyClass:NewInput(input.UserInputType,0)
+            KeyClass:NewInput(input.UserInputType)
         end
 
     end
 
+
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+    
+    if KeyDictionary[input.KeyCode] ~= nil  then
+        if KeyDictionary[input.KeyCode].Active_key == false then
+            print("Not allowing an already tunred of key to turn off")
+       else
+        print("FIRING")
+        KeyClass:NewInput(input.KeyCode)
+        end
+   
+    
+    elseif KeyDictionary[input.UserInputType] ~= nil then
+        if KeyDictionary[input.UserInputType].Active_key == false then
+            print("Not allowing an already tunred of key to turn off")
+       else
+        print("FIRING")
+       ThreadPool:InputNewFn(KeyClass.NewInput, input.KeyCode)
+
+        end
+    end
 
 end)
 
