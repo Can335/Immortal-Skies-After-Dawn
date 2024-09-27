@@ -5,50 +5,59 @@ local Signal = require(ReplicatedStorage.Packages.signal)
 --local CurrentThread = nil
 --local FreeRunnerThread = nil
 
+local SelfObserver = nil
+
 local ThreadPool = {}
 
 ThreadPool.__index = ThreadPool
 
+type ThreadSettings = {FreeRunnerThread: (any ...) -> (any...) |nil,
+FreeRunnerThreadArg: {any},
+CurrentThread :(any ...) -> (any...) |nil,
+CurrentThreadArg :{any},
+TaskQueue : {{Fn: (any...) ->(any...), Arg:{any}}},} 
 
 
-function ThreadPool.New()
-    
-local self = setmetatable({
 
-FreeRunnerThread = nil,
+function ThreadPool.New() : ThreadSettings
+    print("NEWTHREAD POOL")
+local self =  setmetatable({FreeRunnerThread = nil,
 FreeRunnerThreadArg = nil,
 CurrentThread = nil,
 CurrentThreadArg = nil,
-TaskQueue  = {} :: {{Fn: (any...) ->(any...), Arg:{any}}},
-MiddleWareSignal = Signal.new()
-
-}, ThreadPool)
-
+TaskQueue = {}
+        } :: ThreadSettings, ThreadPool)
+print(self, "FAKE")
+SelfObserver = self
 return self
 end
 
-function ThreadPool:InputNewFn(Fn : (any...) ->(any...), Arg: {})
-    
-table.insert(self.TaskQueue, {Fn = Fn, Arg = Arg})
+function ThreadPool.InputNewFn(Self: ThreadSettings,Fn : (any...) ->(any...), Arg: {})
+   print("NEWFN POOL")
+    print(Self) 
+    SelfObserver = Self
+table.insert(Self.TaskQueue, {Fn = Fn, Arg = Arg})
 task.wait()
-self:CheckForNewInput()
-
+Self.CheckForNewInput(Self)
+ SelfObserver = Self
 end
 
-function ThreadPool:CheckForNewInput()
+function ThreadPool.CheckForNewInput(Self: ThreadSettings)
+    print("POOL CHECK")
+    SelfObserver = Self
+if #Self.TaskQueue > 0 then
     
-if #self.TaskQueue > 0 then
+    for Index, Functions in ipairs(Self.TaskQueue) do
     
-    for Index, Functions in ipairs(self.TaskQueue) do
-    
-if self.FreeRunnerThread == nil then
-    self:AquireCurrentRunnerThreadAndReplace(Functions.Fn, Functions.Arg)
+if Self.FreeRunnerThread == nil then
+    Self.AquireFreeThreadAndReplace(Self,Functions.Fn, Functions.Arg)
 
-    table.remove(self.TaskQueue, Index)
+    table.remove(Self.TaskQueue, Index)
+    SelfObserver = Self
     else
 
-self:AquireCurrentRunnerThreadAndExecute()
-
+        Self.AquireCurrentRunnerThreadAndReplace(Self)
+        SelfObserver = Self
 end
 
 
@@ -58,51 +67,58 @@ end
     end
 
 
-return
+return Self
 end
 
-function ThreadPool:AquireFreeThreadAndReplace(fn: (any...) ->(any...), Arg: {any})
+function ThreadPool.AquireFreeThreadAndReplace(Self: ThreadSettings,fn: (any...) ->(any...), Arg: {any})
+    print("REPLACINGFREERUNNER")
+    Self.FreeRunnerThread = fn
+    Self.FreeRunnerThreadArg = Arg
+    SelfObserver = Self
+if Self.CurrentThread == nil then
     
-self.FreeRunnerThread = fn
-self.FreeRunnerThreadArg = Arg
-
-if self.CurrentThread == nil then
-    
-self:AquireCurrentRunnerThreadAndReplace()
-
+    Self.AquireCurrentRunnerThreadAndReplace(Self)
+    SelfObserver = Self
 end
 
-return
+return Self
 end
 
-function ThreadPool:AquireCurrentRunnerThreadAndReplace()
-    
-self.CurrentThread = self.FreeRunnerThread
-self.CurrentThreadArg = self.FreeRunnerThreadArg
-self.
+function ThreadPool.AquireCurrentRunnerThreadAndReplace(Self: ThreadSettings)
+    print("REPLACINGCurrent")
+    Self.CurrentThread = Self.FreeRunnerThread
+    Self.CurrentThreadArg = Self.FreeRunnerThreadArg
+    SelfObserver = Self
 task.wait()
-self.FreeRunnerThread = nil
-self.FreeRunnerThreadArg = nil
-
-self:AquireCurrentRunnerThreadAndExecute()
-
+Self.FreeRunnerThread = nil
+Self.FreeRunnerThreadArg = nil
+SelfObserver = Self
+Self.AquireCurrentRunnerThreadAndExecute(Self)
+task.wait()
+SelfObserver = Self
 end
 
-function ThreadPool:AquireCurrentRunnerThreadAndExecute()
-    
-local TempVar = coroutine.create(self.CurrentThread(self.CurrentThreadArg))
+function ThreadPool.AquireCurrentRunnerThreadAndExecute(Self: ThreadSettings)
+    print("RUNNING CURRENT")
+    print(Self.CurrentThread, Self.CurrentThreadArg, "IMPORTANT")
+local TempVar = coroutine.wrap(function(Self1)
+    print(Self1,"SELF 1")
+    print(Self1.CurrentThreadArg)
+    Self1.CurrentThread(Self1.CurrentThreadArg)
 
-coroutine.resume(TempVar, table.unpack(self.CurrentThreadArg))
+end)
 
+TempVar(Self)
+SelfObserver = Self
 end
 
-function ThreadPool:SignalCurrentThreadFinished()
-    
-self.CurrentThread = nil
-self.CurrentThreadArg = nil
-self:CheckForNewInput()
-
-return
+function ThreadPool.SignalCurrentThreadFinished(Self: ThreadSettings)
+    print("Finished Thread")
+    Self.CurrentThread = nil
+    Self.CurrentThreadArg = nil
+    Self.CheckForNewInput(Self)
+    SelfObserver = Self
+return Self
 end
 
 local KeyClass = {}
@@ -128,11 +144,11 @@ local KeySettingDictionary = {
 local KeyDictionary = {
 
 --[Enum.KeyCode.W] = {keysignore = {},Action = "MoveFoward",Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_Allowed = nil ::boolean, type = nil :: "Hold"|"Push", Signal = nil},
-[Enum.KeyCode.E] = {Action = "BED",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}, Signal =  Instance.new("BindableEvent"), Active_Allowed = true, Active_key = false},
-[Enum.KeyCode.B] = {Action = "BE",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false},
-[Enum.KeyCode.D] = {Action = "BER",Dependency_Disable = {Enum.KeyCode.E},Dependency_crucialblock = {Enum.KeyCode.E}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false},
-[Enum.KeyCode.N] = {Action = "BEDA",Dependency_Disable = {Enum.KeyCode.B},Dependency_crucialblock = {Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false},
-[Enum.KeyCode.I] = {Action = "BEFA",Dependency_Disable = {Enum.KeyCode.N},Dependency_crucialblock = {Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false}
+[Enum.KeyCode.E] = {Action = "BED",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}, Signal =  Instance.new("BindableEvent"), Active_Allowed = true, Active_key = false, Type = "Hold"},
+[Enum.KeyCode.B] = {Action = "BE",Dependency_Disable = {Enum.KeyCode.D},Dependency_crucialblock = {Enum.KeyCode.D}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false, Type = "Hold"},
+[Enum.KeyCode.D] = {Action = "BER",Dependency_Disable = {Enum.KeyCode.E},Dependency_crucialblock = {Enum.KeyCode.E}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false,Type = "NaN"},
+[Enum.KeyCode.N] = {Action = "BEDA",Dependency_Disable = {Enum.KeyCode.B},Dependency_crucialblock = {Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false, Type = "Hold"},
+[Enum.KeyCode.I] = {Action = "BEFA",Dependency_Disable = {Enum.KeyCode.N},Dependency_crucialblock = {Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false, Type = "NaN"}
 }
 
 type NewInput = <T> (Key: T, Debounce:T) -> ({any})
@@ -487,8 +503,10 @@ return self
 end
 
 
-function KeyClass:NewInput<T>(Key:T)
-
+function KeyClass.NewInput<T>(Key:T)
+print(Key)
+    
+print("New INPUT")
     assert(typeof(KeyDictionary[Key]) == "table",  " %s Is Not a Valid member of Keydictionary")
 
     if KeyDictionary[Key] == nil then 
@@ -515,22 +533,25 @@ if KeyDictionary[Key].Active_Allowed == false then
 end
 
 if KeyDictionary[Key].Active_key == true then
-    
+    local bkd = Instance.new("Part",workspace)
+    bkd.Position = Vector3.new(0,10,0)
 KeyDictionary[Key].Active_key = false
-KeyUseAllowed = false
+
 KeyClass:ProcessInput(KeyDictionary[Key], false)
 
 else
     KeyUseAllowed = false
-    KeyClass:ProcessInput(KeyDictionary[Key],true)
     KeyDictionary[Key].Active_key = true
+    KeyClass:ProcessInput(KeyDictionary[Key],true)
+    
+    
 
     print("TURNIN OFF")
 end
 
 
 
-    return KeyDictionary[Key]
+   
 
 end
 
@@ -539,7 +560,7 @@ function KeyClass:ProcessInput(tab : {any},Active_Bool:boolean)
 print("PROCESSING INPUT")
 
 
-if tab.Dependency_crucialblock ~= nil and tab.Active_Key == false then
+if tab.Dependency_crucialblock ~= nil and Active_Bool == true then
     
     for index, value in ipairs(tab.Dependency_crucialblock) do
         task.wait()
@@ -557,7 +578,7 @@ end
 
 end
 
-
+return
 end
 
 
@@ -604,7 +625,7 @@ task.wait()
 --tab.Signal:Fire()
 print(KeyDictionary[Enum.KeyCode.B])
 if Active_Bool == false then
-    ThreadManager:SignalCurrentThreadFinished()
+    ThreadManager.SignalCurrentThreadFinished(SelfObserver)
     KeyUseAllowed = true
     else
         task.wait(.35)
@@ -633,15 +654,23 @@ function KeyClass:ChangeKeys(inputOld:{[any]:any},inputnew: {[any]:any})
 function KeyClass:StartBinding()
     
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+   print(KeyUseAllowed)
     if KeyUseAllowed == true then
         
         if KeyDictionary[input.KeyCode] ~= nil then
-            print("FIRING")
-        KeyClass:NewInput(input.KeyCode)
+
+if KeyDictionary[input.KeyCode].Active_key == false then
+    
+    print("FIRING")
+    KeyClass.NewInput(input.KeyCode)
+
+end
+
+       
         
         elseif KeyDictionary[input.UserInputType] ~= nil then
             print("FIRING")
-            KeyClass:NewInput(input.UserInputType)
+            KeyClass.NewInput(input.UserInputType)
         end
 
     end
@@ -654,18 +683,22 @@ UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
     if KeyDictionary[input.KeyCode] ~= nil  then
         if KeyDictionary[input.KeyCode].Active_key == false then
             print("Not allowing an already tunred of key to turn off")
-       else
-        print("FIRING")
-        KeyClass:NewInput(input.KeyCode)
+       
+       
+            elseif KeyDictionary[input.KeyCode].Type == "Hold" and KeyDictionary[input.KeyCode] ~= nil and KeyDictionary[input.KeyCode].Active_key == true then
+        print(SelfObserver, "SELFOBSERVER")
+        print("FIRING TurnOFF")
+        ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.KeyCode)
+
         end
    
     
     elseif KeyDictionary[input.UserInputType] ~= nil then
         if KeyDictionary[input.UserInputType].Active_key == false then
             print("Not allowing an already tunred of key to turn off")
-       else
-        print("FIRING")
-       ThreadPool:InputNewFn(KeyClass.NewInput, input.KeyCode)
+            elseif KeyDictionary[input.UserInputType].Type == "Hold" and KeyDictionary[input.KeyCode] ~= nil then
+        print("FIRING TurnOFF")
+       ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.UserInputState)
 
         end
     end
