@@ -2,6 +2,108 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Signal = require(ReplicatedStorage.Packages.signal)
 
+--local CurrentThread = nil
+--local FreeRunnerThread = nil
+
+local ThreadPool = {}
+
+ThreadPool.__index = ThreadPool
+
+
+
+function ThreadPool.New()
+    
+local self = setmetatable({
+
+FreeRunnerThread = nil,
+FreeRunnerThreadArg = nil,
+CurrentThread = nil,
+CurrentThreadArg = nil,
+TaskQueue  = {} :: {{Fn: (any...) ->(any...), Arg:{any}}},
+MiddleWareSignal = Signal.new()
+
+}, ThreadPool)
+
+return self
+end
+
+function ThreadPool:InputNewFn(Fn : (any...) ->(any...), Arg: {})
+    
+table.insert(self.TaskQueue, {Fn = Fn, Arg = Arg})
+task.wait()
+self:CheckForNewInput()
+
+end
+
+function ThreadPool:CheckForNewInput()
+    
+if #self.TaskQueue > 0 then
+    
+    for Index, Functions in ipairs(self.TaskQueue) do
+    
+if self.FreeRunnerThread == nil then
+    self:AquireCurrentRunnerThreadAndReplace(Functions.Fn, Functions.Arg)
+
+    table.remove(self.TaskQueue, Index)
+    else
+
+self:AquireCurrentRunnerThreadAndExecute()
+
+end
+
+
+            break
+        end  
+
+    end
+
+
+return
+end
+
+function ThreadPool:AquireFreeThreadAndReplace(fn: (any...) ->(any...), Arg: {any})
+    
+self.FreeRunnerThread = fn
+self.FreeRunnerThreadArg = Arg
+
+if self.CurrentThread == nil then
+    
+self:AquireCurrentRunnerThreadAndReplace()
+
+end
+
+return
+end
+
+function ThreadPool:AquireCurrentRunnerThreadAndReplace()
+    
+self.CurrentThread = self.FreeRunnerThread
+self.CurrentThreadArg = self.FreeRunnerThreadArg
+self.
+task.wait()
+self.FreeRunnerThread = nil
+self.FreeRunnerThreadArg = nil
+
+self:AquireCurrentRunnerThreadAndExecute()
+
+end
+
+function ThreadPool:AquireCurrentRunnerThreadAndExecute()
+    
+local TempVar = coroutine.create(self.CurrentThread(self.CurrentThreadArg))
+
+coroutine.resume(TempVar, table.unpack(self.CurrentThreadArg))
+
+end
+
+function ThreadPool:SignalCurrentThreadFinished()
+    
+self.CurrentThread = nil
+self.CurrentThreadArg = nil
+self:CheckForNewInput()
+
+return
+end
 
 local KeyClass = {}
 
@@ -378,6 +480,7 @@ function KeyClass.Main()
 
 local self = setmetatable({}, KeyClass)
 KeyUseAllowed = true
+self.ThreadManager = ThreadPool.New()
 
 return self
 end
@@ -387,6 +490,7 @@ function KeyClass:NewInput<T>(Key:T, Debounce:T)
     print(KeyUseAllowed , "KEYUSE")
 print(self , "SELF")
 if KeyUseAllowed == false then
+    self.ThreadManager:SignalCurrentThreadFinished()
     print("NOT ALLOWED")
     return 
 end
@@ -394,11 +498,14 @@ end
   
 assert(typeof(KeyDictionary[Key]) == "table",  " %s Is Not a Valid member of Keydictionary")
 
-if KeyDictionary[Key] == nil then return end
+if KeyDictionary[Key] == nil then 
+     self.ThreadManager:SignalCurrentThreadFinished()
+      return
+end
 
 task.wait()
 if KeyDictionary[Key].Active_Allowed == false then
-
+    self.ThreadManager:SignalCurrentThreadFinished()
     return
 end
 
@@ -435,6 +542,7 @@ if tab.Dependency_crucialblock ~= nil then
 
 if Active_Bool == true then
     print("GOING BACK")
+    self.ThreadManager:SignalCurrentThreadFinished()
     return 
 
 end
@@ -455,6 +563,7 @@ if tab.Condition_Blocking ~= nil then
     for index, value in ipairs(tab.Condition_Blocking) do
         task.wait()
     if value() == true and Active_Bool == true then
+        self.ThreadManager:SignalCurrentThreadFinished()
     return
         end
     
