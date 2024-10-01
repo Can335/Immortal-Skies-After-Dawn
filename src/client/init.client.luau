@@ -1,4 +1,4 @@
-local key = require(script.__index.KeyClass)
+local key = require(script.__index.KeyClassTest)
 
 local bedc = key.Main()
 
@@ -14,7 +14,7 @@ bedc:ChangeKeys({
     ["BE"] = Enum.KeyCode.N,
     ["BEDA"] = Enum.KeyCode.B,
     ["BEFA"] = Enum.KeyCode.Tab
-})
+}, key.KeyDictionary)
 
 task.wait()
 

@@ -1,6 +1,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Signal = require(ReplicatedStorage.Packages.signal)
+local UITest = script.TestUI :: ScreenGui
+local UiTemplate = UITest.ColorFrame :: Frame
+local UiLetterTemp = UiTemplate.Letter :: TextLabel
+local UiActionTemp = UiTemplate.Action :: TextLabel
+local TableToStringUtil = require(ReplicatedStorage.Packages.TableToString)
+local LastTime = DateTime.now().UnixTimestamp
+
+local changingKeys = false
 
 --local CurrentThread = nil
 --local FreeRunnerThread = nil
@@ -32,29 +40,45 @@ SelfObserver = self
 return self
 end
 
-function ThreadPool.InputNewFn(Self: ThreadSettings,Fn : (any...) ->(any...), Arg: {})
+
+
+function ThreadPool.InputNewFn(Self: ThreadSettings,Fn : (any...) ->(any...), ...)
+    repeat 
+        print(DateTime.now().UnixTimestamp - LastTime)
+        task.wait()
+    until DateTime.now().UnixTimestamp - LastTime >= 13
+
+    local LastTime = DateTime.now().UnixTimestamp
    print("NEWFN POOL")
     print(Self) 
     SelfObserver = Self
-table.insert(Self.TaskQueue, {Fn = Fn, Arg = Arg})
-task.wait(.05)
-Self.CheckForNewInput(Self)
+    print(...)
+table.insert(Self.TaskQueue, {Fn = Fn, Arg = ...})
+
+ThreadPool.CheckForNewInput(Self)
  SelfObserver = Self
+ return
 end
 
 function ThreadPool.CheckForNewInput(Self: ThreadSettings)
+  
+   
+
     print("POOL CHECK")
+    print(Self.TaskQueue)
     SelfObserver = Self
-if #Self.TaskQueue > 0 then
+if Self.TaskQueue[1] ~= nil then
     
     for Index, Functions in ipairs(Self.TaskQueue) do
     
 if Self.FreeRunnerThread == nil then
     Self.AquireFreeThreadAndReplace(Self,Functions.Fn, Functions.Arg)
 
-    table.remove(Self.TaskQueue, Index)
+    table.remove(Self.TaskQueue, table.find(Self.TaskQueue,Functions))
     SelfObserver = Self
-    else
+    elseif Self.CurrentThread == nil then
+        
+   
 
         Self.AquireCurrentRunnerThreadAndReplace(Self)
         SelfObserver = Self
@@ -62,7 +86,9 @@ end
 
 
             break
-        end  
+        end
+
+        
 
     end
 
@@ -79,6 +105,7 @@ if Self.CurrentThread == nil then
     
     Self.AquireCurrentRunnerThreadAndReplace(Self)
     SelfObserver = Self
+
 end
 
 return Self
@@ -96,6 +123,8 @@ SelfObserver = Self
 Self.AquireCurrentRunnerThreadAndExecute(Self)
 task.wait()
 SelfObserver = Self
+
+return
 end
 
 function ThreadPool.AquireCurrentRunnerThreadAndExecute(Self: ThreadSettings)
@@ -104,21 +133,27 @@ function ThreadPool.AquireCurrentRunnerThreadAndExecute(Self: ThreadSettings)
 local TempVar = coroutine.wrap(function(Self1)
     print(Self1,"SELF 1")
     print(Self1.CurrentThreadArg)
-    Self1.CurrentThread(Self1.CurrentThreadArg)
-
+    Self1.CurrentThread(Self1.CurrentThreadArg[1], Self1.CurrentThreadArg[2])
+ 
+    return
 end)
 
 TempVar(Self)
 SelfObserver = Self
+
+return
 end
 
 function ThreadPool.SignalCurrentThreadFinished(Self: ThreadSettings)
     print("Finished Thread")
     Self.CurrentThread = nil
     Self.CurrentThreadArg = nil
-    task.wait(.05)
-    Self.CheckForNewInput(Self)
+    task.wait(.01)
+
     SelfObserver = Self
+    if #Self.TaskQueue > 0 then
+        Self.CheckForNewInput(Self)
+        end
 return Self
 end
 
@@ -145,28 +180,29 @@ local KeySettingDictionary = {
 ["BEFA"] = Enum.KeyCode.I
 }
 
-local KeyDictionary = {
+KeyClass.KeyDictionary = {
 
 --[Enum.KeyCode.W] = {keysignore = {},Action = "MoveFoward",Dependency_Disable = nil, Dependency_crucialblock = nil,Condition_Blocking = nil,Active_key = nil,Active_Allowed = nil ::boolean, type = nil :: "Hold"|"Push", Signal = nil},
-[Enum.KeyCode.E] = {Action = "BED",Dependency_Disable = nil,Dependency_crucialblock = {Enum.KeyCode.D}, Signal =  Instance.new("BindableEvent"), Active_Allowed = true, Active_key = false, Type = "Hold", color = Color3.new(0.513725, 0.137254, 0.137254)},
-[Enum.KeyCode.B] = {Action = "BE",Dependency_Disable = {Enum.KeyCode.I, Enum.KeyCode.N},Dependency_crucialblock = {Enum.KeyCode.D}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false, Type = "Hold", color = Color3.new(0.137254, 0.270588, 0.513725)},
-[Enum.KeyCode.D] = {Action = "BER",Dependency_Disable = {Enum.KeyCode.E, Enum.KeyCode.B},Dependency_crucialblock = nil, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false,Type = "NaN", color = Color3.new(0.439215, 0.137254, 0.513725)},
-[Enum.KeyCode.N] = {Action = "BEDA",Dependency_Disable = nil,Dependency_crucialblock = {Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false, Type = "Hold", color = Color3.new(0.466666, 0.560784, 0.043137)},
+[Enum.KeyCode.E] = {Action = "BED",Dependency_Disable = nil,Dependency_crucialblock = {Enum.KeyCode.N,Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"), Active_Allowed = true, Active_key = false, Type = "Hold", color = Color3.new(0.513725, 0.137254, 0.137254)},
+[Enum.KeyCode.B] = {Action = "BE",Dependency_Disable = {Enum.KeyCode.I},Dependency_crucialblock = { Enum.KeyCode.N, Enum.KeyCode.E}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false, Type = "Hold", color = Color3.new(0.137254, 0.270588, 0.513725)},
+[Enum.KeyCode.D] = {Action = "BER",Dependency_Disable = {Enum.KeyCode.E},Dependency_crucialblock = nil, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false,Type = "NaN", color = Color3.new(0.439215, 0.137254, 0.513725)},
+[Enum.KeyCode.N] = {Action = "BEDA",Dependency_Disable = nil,Dependency_crucialblock = {Enum.KeyCode.B, Enum.KeyCode.E}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false, Type = "Hold", color = Color3.new(0.466666, 0.560784, 0.043137)},
 [Enum.KeyCode.I] = {Action = "BEFA",Dependency_Disable = {Enum.KeyCode.N},Dependency_crucialblock = {Enum.KeyCode.B}, Signal =  Instance.new("BindableEvent"),Active_Allowed = true, Active_key = false, Type = "NaN", color = Color3.new(0.219607, 0.137254, 0.513725)}
 }
 
 type NewInput = <T> (Key: T, Debounce:T) -> ({any})
 
 
-function ChangeKeySettings(Changes: {[string]: any},CompareChanges: {[string]: any})
-    
+function ChangeKeySettings(Changes: {[string]: any},CompareChanges: {[string]: any},Dict:{[any] : any})
+    changingKeys = true
+    UITest.Parent = game.Players.LocalPlayer.PlayerGui
 local Temp = {}
 local AlreadyCheckedWorld93 = {}
 local AlreadyCheckedNormal = {}
 local AlreadyCheckedNormalNew = {}
 local World93Temp_Container = {}
 
-print(KeyDictionary)
+print(Dict)
 
 --[[for index8, value8 in pairs(Changes) do
 print(AlreadyCheckedNormalNew, AlreadyCheckedNormal, AlreadyCheckedWorld93)
@@ -240,23 +276,23 @@ OtherKeyWorld93Index = Changes[index9]
 
  print(NewKeyIndex, OldKeyIndex,OtherKeyWorld93Index)
 
-CloneTab = table.clone(KeyDictionary[OldKeyIndex])
+CloneTab = table.clone(Dict[OldKeyIndex])
 
 if OtherKeyWorld93Index ~= nil and Freeze == false then
 print("changingl")
-CloneTabOptional = table.clone(KeyDictionary[NewKeyIndex])
+CloneTabOptional = table.clone(Dict[NewKeyIndex])
 
 task.wait()
 
-KeyDictionary[OtherKeyWorld93Index] = nil
-KeyDictionary[NewKeyIndex] = nil
+Dict[OtherKeyWorld93Index] = nil
+Dict[NewKeyIndex] = nil
 task.wait()
 
-KeyDictionary[NewKeyIndex] = CloneTab
-KeyDictionary[OldKeyIndex] = CloneTabOptional
+Dict[NewKeyIndex] = CloneTab
+Dict[OldKeyIndex] = CloneTabOptional
 elseif Freeze == false then
-    KeyDictionary[OldKeyIndex] = nil
-    KeyDictionary[NewKeyIndex] = CloneTab
+    Dict[OldKeyIndex] = nil
+    Dict[NewKeyIndex] = CloneTab
 end
 
 table.insert(AlreadyCheckedNormali,OldKeyIndex)
@@ -327,7 +363,7 @@ end
 
 print(Frezze_New_key_Variable, Frezze_Old_Key_Variable,Frezze_Overlapp_Variable)
 --
-    for Member_KeyDictionary, Key_Value in pairs(KeyDictionary) do
+    for Member_KeyDictionary, Key_Value in pairs(Dict) do
 task.wait()        
 --1
 
@@ -477,7 +513,7 @@ print(AlreadyCheckedNormal , "NORMAL", AlreadyCheckedWorld93 ,"WRLD", AlreadyChe
 
         end
 
-        print(KeyDictionary)
+        print(Dict)
 
         for index, value in pairs(KeySettingDictionary) do
             
@@ -488,17 +524,34 @@ value = Changes[index]
 end
 
         end
+UITest.TextLabel:Destroy()
 
-
+task.wait()
+        print(UITest.Parent, "PARENT")
+        local lastClone = UiTemplate
+        
+        for index23, value23 in pairs(Dict) do
+            
+        local Clone = UiTemplate:Clone() :: Frame
+        Clone.Parent = UITest
+        Clone.Name = "Clone" .. tostring(index23)
+        Clone.BackgroundColor3 = value23.color
+        Clone.Action.Text = value23.Action .. string.gsub("/n Type:", "/n", " ") .. value23.Type .. string.gsub("/n Dependency Disable/Blocking :" .. TableToStringUtil.Change(value23.Dependency_Disable) .. "/n" .. "///" .. TableToStringUtil.Change(value23.Dependency_crucialblock) ,"/n", " ")
+        Clone.Letter.Text = tostring(index23)
+        Clone.Position = lastClone.Position  + UDim2.new(0, 0,0,Clone.Size.Y.Offset)
+       
+        lastClone = Clone
+        changingKeys = false
+        end
 end
 
 
-function ChangeKeyState(Key: KeyCode, bool:boolean)
+function ChangeKeyState(Key: KeyCode, bool:boolean, dict: {[any]: any})
 
-    assert(typeof(KeyDictionary[Key]) == "table", "%s is not a valid member of KeyDictionary")
+    assert(typeof(dict[Key]) == "table", "%s is not a valid member of KeyDictionary")
  
-    KeyDictionary[Key].Active_key = bool
-    KeyDictionary[Key].Signal:Fire(bool) --False mean deactivate in the listner module
+    dict[Key].Active_key = bool
+    dict[Key].Signal:Fire(bool) --False mean deactivate in the listner module
 return true
 end
 
@@ -515,28 +568,87 @@ return self
 end
 
 
-function KeyClass.NewInput<T>(Key:T)
+function KeyClass.NewInput<T>(Key:T,dict:{[any]: any})
 print(Key)
-    
-print("New INPUT")
-    assert(typeof(KeyDictionary[Key]) == "table",  " %s Is Not a Valid member of Keydictionary")
+print(dict)
 
-    if KeyDictionary[Key] == nil then 
-        
+
+print("New INPUT")
+    assert(typeof(dict[Key]) == "table",  " %s Is Not a Valid member of Keydictionary")
+
+    if dict[Key] == nil then 
+        table.remove(CurrentStagedKeysTurnOn, table.find(CurrentStagedKeysTurnOn, Key))
          return
    end
    
 
     print(KeyUseAllowed , "KEYUSE")
 
-if KeyUseAllowed == false and KeyDictionary[Key].Active_key == false then
+if KeyUseAllowed == false and dict[Key].Active_key == false then
     
     print("NOT ALLOWED")
+    table.remove(CurrentStagedKeysTurnOn, table.find(CurrentStagedKeysTurnOn, Key))
+
+    KeyUseAllowed = true
+
     return 
 end
 
-if KeyDictionary[Key].Active_key == false then
+if dict[Key].Active_key == false then
     
+    KeyUseAllowed = false
+end
+
+
+if dict[Key].Active_key == false  then
+   
+    if dict[Key].Dependency_crucialblock ~= nil  then
+    
+        for index, value in ipairs(dict[Key].Dependency_crucialblock) do
+            task.wait()
+        if dict[value].Active_key == true then
+    
+    
+        print("GOING BACK")
+        table.remove(CurrentStagedKeysTurnOn, table.find(CurrentStagedKeysTurnOn, Key))
+        UITest["Clone" .. tostring(Key)].BackgroundTransparency = 0
+        KeyUseAllowed = true
+
+        return 
+    
+    
+    
+        end
+    
+    end
+    
+    
+    end
+
+
+  
+
+        if dict[Key].Dependency_Disable ~= nil then
+            
+            for index, value in ipairs(dict[Key].Dependency_Disable)  do
+        
+                dict[value].Active_key = false
+                dict[value].Signal:Fire()
+                table.remove(CurrentStagedKeysTurnOff, table.find(CurrentStagedKeysTurnOff, value))
+                UITest["Clone" .. tostring(value)].BackgroundTransparency = 0
+                end
+    
+      
+    
+     
+    
+    
+    end
+    
+    
+    
+   
+    print("README")
     KeyUseAllowed = false
 
 end
@@ -544,22 +656,20 @@ end
 
 
 task.wait()
-if KeyDictionary[Key].Active_Allowed == false then
+if dict[Key].Active_Allowed == false then
     KeyUseAllowed = true
     return
 end
 
-if KeyDictionary[Key].Active_key == true then
-    local bkd = Instance.new("Part",workspace)
-    bkd.Position = Vector3.new(0,10,0)
+if dict[Key].Active_key == true then
 
 
-KeyClass:ProcessInput(KeyDictionary[Key], false,Key)
+KeyClass:ProcessInput(dict[Key], false,Key,dict)
 
 else
     KeyUseAllowed = false
     
-    KeyClass:ProcessInput(KeyDictionary[Key],true,Key)
+    KeyClass:ProcessInput(dict[Key],true,Key,dict)
     
     
 
@@ -569,10 +679,10 @@ end
 
 
    
-
+return
 end
 
-function KeyClass:ProcessInput(tab : {any},Active_Bool:boolean,Key)
+function KeyClass:ProcessInput(tab : {any},Active_Bool:boolean,Key,dict:{[any]: any})
     print(Key, "CHECKING IF KEY IS AVALIBLE")
 print("PROCESSING INPUT")
 
@@ -581,11 +691,12 @@ if tab.Dependency_crucialblock ~= nil and Active_Bool == true then
     
     for index, value in ipairs(tab.Dependency_crucialblock) do
         task.wait()
-    if KeyDictionary[value].Active_key == true then
+    if dict[value].Active_key == true then
 
 if Active_Bool == true then
     print("GOING BACK")
     table.remove(CurrentStagedKeysTurnOn, table.find(CurrentStagedKeysTurnOn, Key))
+    UITest["Clone" .. tostring(Key)].BackgroundTransparency = 0
     return 
 
 end
@@ -624,9 +735,11 @@ if Active_Bool == true then
         
         for index, value in ipairs(tab.Dependency_Disable)  do
     
-            KeyDictionary[value].Active_key = false
-            KeyDictionary[value].Signal:Fire()
-            
+            dict[value].Active_key = false
+            dict[value].Signal:Fire()
+            table.remove(CurrentStagedKeysTurnOff, table.find(CurrentStagedKeysTurnOff, value))
+            table.remove(CurrentStagedKeysTurnOn, table.find(CurrentStagedKeysTurnOn, value))
+            UITest["Clone" .. tostring(value)].BackgroundTransparency = 0
             end
 
     end
@@ -642,17 +755,21 @@ print("Still Executing")
 --tab.Signal:Fire()
 
 if Active_Bool == false then
-    KeyDictionary[Key].Active_key = false
+    dict[Key].Active_key = false
+    local bkd = Instance.new("Part",workspace)
+    bkd.Position = Vector3.new(0,10,0)
+bkd.Color = dict[Key].color
+
     repeat   table.remove(CurrentStagedKeysTurnOff, table.find(CurrentStagedKeysTurnOff, Key))
        print("LOOPING")
        print(CurrentStagedKeysTurnOff)
         task.wait()
     until   table.find(CurrentStagedKeysTurnOff,  Key) == nil
   print("DONE WITH CHABGING THE STATUS")
-    ThreadManager.SignalCurrentThreadFinished(SelfObserver)
+    ThreadPool.SignalCurrentThreadFinished(SelfObserver)
    
     else
-        KeyDictionary[Key].Active_key = true
+        dict[Key].Active_key = true
         
         repeat   table.remove(CurrentStagedKeysTurnOn, table.find(CurrentStagedKeysTurnOn, Key))
             task.wait()
@@ -660,67 +777,75 @@ if Active_Bool == false then
             print(CurrentStagedKeysTurnOn)
             print("LOOPING")
         until   table.find(CurrentStagedKeysTurnOn,  Key) == nil
-        task.wait(.35)
+        task.wait()
         print("DONE WITH CHABGING THE STATUS")
         KeyUseAllowed = true
         
         print(KeyUseAllowed)
 end
 
-
+return
 end
 
-function KeyClass:ChangeKeys(inputOld:{[any]:any},inputnew: {[any]:any})
+function KeyClass:ChangeKeys(inputOld:{[any]:any},inputnew: {[any]:any}, dict:{[any]:any})
     
-    ChangeKeySettings(inputnew,inputOld)
+    ChangeKeySettings(inputnew,inputOld,dict)
     task.wait()
-    print(KeyDictionary)
-    print(KeyDictionary[Enum.KeyCode.E], "E")
-    print(KeyDictionary[Enum.KeyCode.D], "d")
-    print(KeyDictionary[Enum.KeyCode.N], "n")
-    print(KeyDictionary[Enum.KeyCode.B], "b")
-    print(KeyDictionary[Enum.KeyCode.Tab], "tab")
+    print(dict)
+    print(dict[Enum.KeyCode.E], "E")
+    print(dict[Enum.KeyCode.D], "d")
+    print(dict[Enum.KeyCode.N], "n")
+    print(dict[Enum.KeyCode.B], "b")
+    print(dict[Enum.KeyCode.Tab], "tab")
     return
     end
     
 function KeyClass:StartBinding()
     
+local dict = KeyClass.KeyDictionary
+
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if changingKeys == true then return end
     print(CurrentStagedKeysTurnOn, "THIS", "TURN ON")
     print(KeyUseAllowed, input.KeyCode, input.UserInputType,"CHECK THIS")
     if KeyUseAllowed == true then
         
-        if KeyDictionary[input.KeyCode] ~= nil then
+        if dict[input.KeyCode] ~= nil then
 
-if KeyDictionary[input.KeyCode].Active_key == false and table.find(CurrentStagedKeysTurnOn, input.KeyCode) == nil then
+if dict[input.KeyCode].Active_key == false and table.find(CurrentStagedKeysTurnOn, input.KeyCode) == nil and table.find(CurrentStagedKeysTurnOff, input.KeyCode) == nil then
+   UITest["Clone" .. tostring(input.KeyCode)].BackgroundTransparency = .6
     table.insert(CurrentStagedKeysTurnOn, input.KeyCode)
-    print("FIRING")
+    print("FIRING Turn on FOR" , input.KeyCode)
     --ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.KeyCode)
-    
-    KeyClass.NewInput(input.KeyCode)
-elseif KeyDictionary[input.KeyCode].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.KeyCode) == nil then
 
+    KeyClass.NewInput(input.KeyCode,dict)
+    return
+elseif dict[input.KeyCode].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.KeyCode) == nil and table.find(CurrentStagedKeysTurnOn, input.KeyCode) == nil and dict[input.KeyCode].Type ~= "Hold" then
+    UITest["Clone" .. tostring(input.KeyCode)].BackgroundTransparency = 0
     table.insert(CurrentStagedKeysTurnOff, input.KeyCode)
-    print("FIRING")
+    print("FIRING Turn Off FOR" , input.KeyCode)
    -- ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.KeyCode)
-    KeyClass.NewInput(input.KeyCode)
+   
+    KeyClass.NewInput(input.KeyCode,dict)
+    return
 end
 
        
         
-        elseif KeyDictionary[input.UserInputType] ~= nil then
+        elseif dict[input.UserInputType] ~= nil then
 
-            if KeyDictionary[input.UserInputType].Active_key == false and table.find(CurrentStagedKeysTurnOn, input.UserInputType) == nil then
+            if dict[input.UserInputType].Active_key == false and table.find(CurrentStagedKeysTurnOn, input.UserInputType) == nil then
                 table.insert(CurrentStagedKeysTurnOn, input.UserInputType)
                 print("FIRING")
-                ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.UserInputType)
-               -- KeyClass.NewInput(input.UserInputType)
-            elseif KeyDictionary[input.UserInputType].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.UserInputType) == nil then
+              
+                KeyClass.NewInput(input.UserInputType,dict)
+                return
+            elseif dict[input.UserInputType].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.UserInputType) == nil then
             
                 table.insert(CurrentStagedKeysTurnOff, input.UserInputType)
                 print("FIRING")
-               -- KeyClass.NewInput(input.UserInputType)
-                ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.UserInputType)
+               KeyClass.NewInput(input.UserInputType,dict)
+              return
             end
 
          
@@ -732,34 +857,49 @@ return
 end)
 
 UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+   
+    print(input.KeyCode, "READ THIS important to see if keycodes doesnt overlapp")
+    if changingKeys == true then return end
     print(CurrentStagedKeysTurnOff, "THIS")
-    if KeyDictionary[input.KeyCode] ~= nil  then
-        if KeyDictionary[input.KeyCode].Active_key == false then
+    print(KeyClass.KeyDictionary[Enum.KeyCode.N], "LOOK THIS")
+    if dict[input.KeyCode] ~= nil  then
+
+
+        if dict[input.KeyCode].Active_key == false then
             print("Not allowing an already tunred of key to turn off")
        
-       
-            elseif KeyDictionary[input.KeyCode].Type == "Hold"  and KeyDictionary[input.KeyCode].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.KeyCode) == nil then
-        print(SelfObserver, "SELFOBSERVER")
+       return
+            elseif dict[input.KeyCode].Type == "Hold"  and dict[input.KeyCode].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.KeyCode) == nil and table.find(CurrentStagedKeysTurnOn, input.KeyCode) == nil then
+                UITest["Clone" .. tostring(input.KeyCode)].BackgroundTransparency = 0
+                print(SelfObserver, "SELFOBSERVER")
         print("FIRING TurnOFF")
+     
         table.insert(CurrentStagedKeysTurnOff, input.KeyCode)
-        task.wait(.016)
-        ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.KeyCode)
-       
+        task.wait()
+        ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, {input.KeyCode,dict})
+       return
         end
    
     
-    elseif KeyDictionary[input.UserInputType] ~= nil then
-        if KeyDictionary[input.UserInputType].Active_key == false then
+    elseif dict[input.UserInputType] ~= nil and dict[input.UserInputType].Type == "Hold" then
+        if dict[input.UserInputType].Active_key == false then
             print("Not allowing an already tunred of key to turn off")
-            elseif KeyDictionary[input.UserInputType].Type == "Hold" and KeyDictionary[input.KeyCode] ~= nil  and KeyDictionary[input.KeyCode].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.UserInputType) == nil then
+            elseif dict[input.UserInputType].Type == "Hold" and dict[input.UserInputType] ~= nil  and dict[input.UserInputType].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.UserInputType) == nil then
         print("FIRING TurnOFF")
         print("Insterting")
         table.insert(CurrentStagedKeysTurnOff, input.UserInputType)
-        task.wait(.01)
-       ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.UserInputType)
-      
+        task.wait()
+       ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, {input.UserInputType,dict})
+      return
         end
     end
+
+if dict[input.KeyCode] ~= nil and table.find(CurrentStagedKeysTurnOff, input.KeyCode) then
+    print("PROBLEM")
+    ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, {input.KeyCode,dict})
+
+end
+
 return
 end)
 
