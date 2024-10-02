@@ -9,11 +9,11 @@ local TableToStringUtil = require(ReplicatedStorage.Packages.TableToString)
 local LastTime = DateTime.now().UnixTimestamp
 
 local changingKeys = false
-
+local alreadyactivethread = false
 --local CurrentThread = nil
 --local FreeRunnerThread = nil
 
-local SelfObserver = nil
+local SelfObserver = {}
 
 local ThreadPool = {}
 
@@ -46,35 +46,39 @@ function ThreadPool.InputNewFn(Self: ThreadSettings,Fn : (any...) ->(any...), ..
     repeat 
         print(DateTime.now().UnixTimestamp - LastTime)
         task.wait()
-    until DateTime.now().UnixTimestamp - LastTime >= 13
+    until DateTime.now().UnixTimestampMillis - LastTime >= 2000
 
-    local LastTime = DateTime.now().UnixTimestamp
+    LastTime = DateTime.now().UnixTimestamp
    print("NEWFN POOL")
     print(Self) 
     SelfObserver = Self
     print(...)
 table.insert(Self.TaskQueue, {Fn = Fn, Arg = ...})
+if alreadyactivethread == false then
+    
 
-ThreadPool.CheckForNewInput(Self)
+    Self.CheckForNewInput(Self)
+    alreadyactivethread = true
+end
+
  SelfObserver = Self
  return
 end
 
 function ThreadPool.CheckForNewInput(Self: ThreadSettings)
   
-   
+   print("checking for input")
 
     print("POOL CHECK")
     print(Self.TaskQueue)
     SelfObserver = Self
 if Self.TaskQueue[1] ~= nil then
     
-    for Index, Functions in ipairs(Self.TaskQueue) do
     
 if Self.FreeRunnerThread == nil then
-    Self.AquireFreeThreadAndReplace(Self,Functions.Fn, Functions.Arg)
+    Self.AquireFreeThreadAndReplace(Self,Self.TaskQueue[1].Fn, Self.TaskQueue[1].Arg)
 
-    table.remove(Self.TaskQueue, table.find(Self.TaskQueue,Functions))
+    table.remove(Self.TaskQueue, 1)
     SelfObserver = Self
     elseif Self.CurrentThread == nil then
         
@@ -85,11 +89,12 @@ if Self.FreeRunnerThread == nil then
 end
 
 
-            break
-        end
 
         
-
+else
+    task.wait()
+    ThreadPool.SignalCurrentThreadFinished(Self)
+  
     end
 
 
@@ -105,7 +110,8 @@ if Self.CurrentThread == nil then
     
     Self.AquireCurrentRunnerThreadAndReplace(Self)
     SelfObserver = Self
-
+else
+    Self.AquireCurrentRunnerThreadAndExecute(Self)
 end
 
 return Self
@@ -148,11 +154,13 @@ function ThreadPool.SignalCurrentThreadFinished(Self: ThreadSettings)
     print("Finished Thread")
     Self.CurrentThread = nil
     Self.CurrentThreadArg = nil
-    task.wait(.01)
+    task.wait()
 
     SelfObserver = Self
-    if #Self.TaskQueue > 0 then
+    if Self.TaskQueue[1] ~= nil then
         Self.CheckForNewInput(Self)
+        else
+            alreadyactivethread = false
         end
 return Self
 end
@@ -542,7 +550,11 @@ task.wait()
        
         lastClone = Clone
         changingKeys = false
+   
+
         end
+
+      
 end
 
 
@@ -816,8 +828,8 @@ if dict[input.KeyCode].Active_key == false and table.find(CurrentStagedKeysTurnO
    UITest["Clone" .. tostring(input.KeyCode)].BackgroundTransparency = .6
     table.insert(CurrentStagedKeysTurnOn, input.KeyCode)
     print("FIRING Turn on FOR" , input.KeyCode)
-    --ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, input.KeyCode)
-
+   
+   -- ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, {input.KeyCode,dict})
     KeyClass.NewInput(input.KeyCode,dict)
     return
 elseif dict[input.KeyCode].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.KeyCode) == nil and table.find(CurrentStagedKeysTurnOn, input.KeyCode) == nil and dict[input.KeyCode].Type ~= "Hold" then
@@ -838,7 +850,7 @@ end
                 table.insert(CurrentStagedKeysTurnOn, input.UserInputType)
                 print("FIRING")
               
-                KeyClass.NewInput(input.UserInputType,dict)
+                ThreadPool.InputNewFn(SelfObserver,KeyClass.NewInput, {input.KeyCode,dict})
                 return
             elseif dict[input.UserInputType].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.UserInputType) == nil then
             
@@ -857,7 +869,7 @@ return
 end)
 
 UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
-   
+   print("letting", input.KeyCode)
     print(input.KeyCode, "READ THIS important to see if keycodes doesnt overlapp")
     if changingKeys == true then return end
     print(CurrentStagedKeysTurnOff, "THIS")
@@ -869,7 +881,7 @@ UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
             print("Not allowing an already tunred of key to turn off")
        
        return
-            elseif dict[input.KeyCode].Type == "Hold"  and dict[input.KeyCode].Active_key == true and table.find(CurrentStagedKeysTurnOff, input.KeyCode) == nil and table.find(CurrentStagedKeysTurnOn, input.KeyCode) == nil then
+            elseif dict[input.KeyCode].Type == "Hold"  and dict[input.KeyCode].Active_Allowed == true and table.find(CurrentStagedKeysTurnOff, input.KeyCode) == nil then
                 UITest["Clone" .. tostring(input.KeyCode)].BackgroundTransparency = 0
                 print(SelfObserver, "SELFOBSERVER")
         print("FIRING TurnOFF")
