@@ -1,8 +1,22 @@
+game.Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 local test = require(script.__index.MovementClass)
+local Testen = require(script.__index.CameraClass)
+task.wait(5)
 
-local Deet =test.New()
 
-Deet:Add(Enum.KeyCode.B)
+coroutine.wrap(function()
+    local Starten = Testen.New(game.Workspace.MaleCharacter)
+    Starten:Start()
+
+end)()
+
+
+
+coroutine.wrap(function()
+    local Deet =test.New(game.Workspace.MaleCharacter)
+    Deet:Start(game.Workspace.MaleCharacter.ControllerManager)
+
+end)()
 
 --[[local key = require(script.__index.KeyClassTest)
 
