@@ -1,4 +1,10 @@
-local key = require(script.__index.KeyClassTest)
+local test = require(script.__index.MovementClass)
+
+local Deet =test.New()
+
+Deet:Add(Enum.KeyCode.B)
+
+--[[local key = require(script.__index.KeyClassTest)
 
 local bedc = key.Main()
 
@@ -18,4 +24,4 @@ bedc:ChangeKeys({
 
 task.wait()
 
-key.StartBinding()
+key.StartBinding()]]

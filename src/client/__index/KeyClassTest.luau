@@ -557,6 +557,16 @@ task.wait()
       
 end
 
+function KeyClass.ReturnActionKey(Action : string, dict: any)
+    
+for index, value in pairs(dict) do
+    if value.Action == Action then
+        return Action
+    end
+end
+task.wait()
+return false
+end
 
 function ChangeKeyState(Key: KeyCode, bool:boolean, dict: {[any]: any})
 
