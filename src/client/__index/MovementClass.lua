@@ -56,6 +56,7 @@ self.CurrentRightVector =  Vector3.new(Camera.CFrame.RightVector.X, 0, Camera.CF
 self.MoveVector = Vector3.new(0,0,0)
 self.Character = Character
 
+
     self.CurrentTypeCam = "Normal"
 
     self.QueueSettingsDirection = {
@@ -211,6 +212,8 @@ self.Character.Name = game.Players.LocalPlayer.Name
 game.Players.LocalPlayer.Character:Destroy()
 
 game.Players.LocalPlayer.Character = self.Character
+
+
 
 game:GetService("RunService").RenderStepped:Connect(function(deltaTime)
     self:InitState(CharacterCL, deltaTime)

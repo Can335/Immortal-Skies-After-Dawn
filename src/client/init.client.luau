@@ -1,22 +1,27 @@
 game.Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 local test = require(script.__index.MovementClass)
 local Testen = require(script.__index.CameraClass)
+local fd = require(script.__index.RespawnClass)
 task.wait(5)
 
+--[[game.Players.PlayerAdded:Connect(function(player)
+    
+    coroutine.wrap(function()
+        local Starten = Testen.New(game.Workspace.MaleCharacter)
+        Starten:Start()
+    
+    end)()
+    
+    
+    
+    coroutine.wrap(function()
+        local Deet =test.New(game.Workspace.MaleCharacter)
+        Deet:Start(game.Workspace.MaleCharacter.ControllerManager)
+    
+    end)()
 
-coroutine.wrap(function()
-    local Starten = Testen.New(game.Workspace.MaleCharacter)
-    Starten:Start()
+end)]]
 
-end)()
-
-
-
-coroutine.wrap(function()
-    local Deet =test.New(game.Workspace.MaleCharacter)
-    Deet:Start(game.Workspace.MaleCharacter.ControllerManager)
-
-end)()
 
 --[[local key = require(script.__index.KeyClassTest)
 
