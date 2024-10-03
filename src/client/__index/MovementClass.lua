@@ -1,5 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local Camera = game.Workspace.CurrentCamera
+
 
 local QueueUtil = require(ReplicatedStorage.Packages.queue)
 
@@ -12,6 +14,8 @@ New: () -> MovementCS<T>,
 Add: (self: MovementCS<T>,KeyCode : Enum.KeyCode) -> (boolean),
 Remove : (self: MovementCS<T>,KeyCode : Enum.KeyCode) -> (boolean),
 Start : (self: MovementCS<T>,CharacterCL : ControllerManager) -> (),
+
+KeysAccepting : {Enum.KeyCode},
 
 CurrentTypeCam : "Normal" | "Directional" ,
 
@@ -64,7 +68,7 @@ function MovementClass.New(): MovementCS<any>
         
             }
 
-
+self.KeysAccepting = {Enum.KeyCode.W, Enum.KeyCode.D, Enum.KeyCode.A, Enum.KeyCode.D}
 
 self._Queue = QueueUtil.new({}) :: QueueUtil.Queue<any>
 
@@ -155,7 +159,37 @@ end
 
 
 
+function MovementClass:Start(CharacterCL: ControllerManager)
+    
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    
+    if table.find(self.KeysAccepting,input.KeyCode) == nil then
+        
+        return
+    end
 
+    task.wait()
+
+    self:Add(input.KeyCode)
+    task.wait()
+    self:InitState(CharacterCL)
+
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+    
+    if table.find(self.KeysAccepting,input.KeyCode) == nil then
+        
+        return
+    end
+
+    task.wait()
+    self:Remove(input.KeyCode)
+    task.wait()
+    self:InitState(CharacterCL)
+end)
+
+end
 
 
 
