@@ -10,6 +10,17 @@ return ByteNet.defineNamespace("Respawn", function()
 message = ByteNet.string
 
             }),
+
+			Died = ByteNet.definePacket({
+
+value = ByteNet.struct({
+
+
+message = ByteNet.string
+
+})
+
+			})
 			
 		}),
 	}

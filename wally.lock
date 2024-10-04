@@ -5,7 +5,7 @@ registry = "test"
 [[package]]
 name = "canja/repo"
 version = "0.1.0"
-dependencies = [["bytenet", "ffrostflame/bytenet@0.4.6"], ["promise", "evaera/promise@4.0.0"], ["queue", "egomoose/queue@0.1.0"], ["signal", "sleitnick/signal@2.0.1"], ["spring", "nightcycle/spring@1.0.0"]]
+dependencies = [["bytenet", "ffrostflame/bytenet@0.4.6"], ["promise", "evaera/promise@4.0.0"], ["queue", "egomoose/queue@0.1.0"], ["signal", "sleitnick/signal@2.0.1"], ["spring", "nightcycle/spring@1.0.0"], ["trove", "sleitnick/trove@1.4.0"]]
 
 [[package]]
 name = "egomoose/queue"
@@ -30,4 +30,9 @@ dependencies = []
 [[package]]
 name = "sleitnick/signal"
 version = "2.0.1"
+dependencies = []
+
+[[package]]
+name = "sleitnick/trove"
+version = "1.4.0"
 dependencies = []

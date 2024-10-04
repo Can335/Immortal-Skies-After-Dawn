@@ -4,14 +4,16 @@ local MovementClass = require(script.Parent.MovementClass)
 local CameraClass = require(script.Parent.CameraClass)
 
 
-local PackagePlayerRespawnNetwork = require(ReplicatedStorage.Shared.Services.NameSpaces_ByteNet.Respawn)
+local PackagePlayerRespawnNetwork = require(game.ReplicatedStorage.Shared.NameSpaces_ByteNet.Respawn)
+
+
 
 export type RespawnCS<T> = {
 
 New: () -> RespawnCS<T>,
 Respawn: (self: RespawnCS<T>, Player: Player, Character: Model) -> (),
 Death: (self: RespawnCS<T>, Player: Player) -> (),
-Start: (self:RespawnCS<T>) -> (),
+ConnectClient: (self:RespawnCS<T>) -> (),
 SignalNewSpawnToPlayer : any
 }
 
@@ -28,12 +30,14 @@ local self : RespawnCS<any> = setmetatable({},RespawnClass) :: any
 return self :: RespawnCS<any>
 end
 
-function RespawnClass:Start()
+function RespawnClass:ConnectClient()
     
-local Character = Players.LocalPlayer.Character
-PackagePlayerRespawnNetwork.Respawned:listen(function(data)
-    print("DATA Here")
-end)
+
+    PackagePlayerRespawnNetwork.Respawned.listen(function(data)
+        print(data)
+        MovementClass.New(game.Players.LocalPlayer.Character):Start(game.Players.LocalPlayer.Character.ControllerManager)
+        CameraClass.New(game.Players.LocalPlayer.Character):Start()
+      end)
   
 
 end

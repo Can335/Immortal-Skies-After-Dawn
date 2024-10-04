@@ -17,6 +17,7 @@ New: (Character : Model) -> CameraCS<T>,
 ChangeState : (self:CameraCS<T>, NewState:any) -> (boolean),
 Cutscene : (self:CameraCS<T>, Fn: (any...) -> (any...)) -> (boolean),
 Shake : (self:CameraCS<T>) -> (),
+Destroy: (self:CameraCS<T>) ->(),
 
 States : {"Aiming" | "Normal" | "Cutscene"|"NaN"},
 Settings : {
@@ -202,5 +203,18 @@ self:Update(deltaTime)
 end)
 
 end
+
+
+function CameraClass:Destroy()
+    
+
+    local Temp_Table = {}
+    
+    for index, value in self do
+        print(index, value)
+        self[index] = nil
+    end
+end
+
 
 return CameraClass

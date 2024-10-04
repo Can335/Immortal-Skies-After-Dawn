@@ -2,7 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Camera = game.Workspace.CurrentCamera
 
-
+local TroveUtil = require(ReplicatedStorage.Packages.trove)
 local QueueUtil = require(ReplicatedStorage.Packages.queue)
 
 
@@ -35,13 +35,11 @@ QueueSettingsDirection : {
 
 },
 
-QueueSettingsDirectionFacing : {
 
-    [Enum.KeyCode] : {["Normal"]:{[number]: number}, ["Directional"]:{[number]: number}}
 
-},
+InitState: (self: MovementCS<T>,CharacterCL: ControllerManager,deltatime) -> (boolean),
 
-InitState: (self: MovementCS,CharacterCL: ControllerManager,deltatime) -> (boolean)
+Destroy: (self: MovementCS<T>) -> ()
 
 }
 
@@ -68,14 +66,7 @@ self.Character = Character
 
     }
 
-    self.QueueSettingsDirectionFacing = {
 
-        [Enum.KeyCode.W] = {["Normal"] = {[1] = 0, [2] = 0,[3] = 0, [4] = 0}, ["Directional"] = {[1] = 1, [2] = 1, [3] = 0, [4] = 0}},
-        [Enum.KeyCode.S] = {["Normal"] = {[1] = 0, [2] = 0,[3] = 0, [4] = 0}, ["Directional"] = {[1] = 1, [2] = 1, [3] = 0, [4] = 0}},
-        [Enum.KeyCode.A] = {["Normal"] = {[1] = 0, [2] = 0,[3] = 0, [4] = 0}, ["Directional"] = {[1] = 1, [2] = 1, [3] = 0, [4] = 0}},
-        [Enum.KeyCode.D] = {["Normal"] = {[1] = 0, [2] = 0,[3] = 0, [4] = 0}, ["Directional"] = {[1] = 1, [2] = 1, [3] = 0, [4] = 0}}
-        
-            }
 
 self.KeysAccepting = {Enum.KeyCode.W, Enum.KeyCode.D, Enum.KeyCode.A, Enum.KeyCode.S}
 
@@ -103,6 +94,7 @@ end
 
 function MovementClass:Remove(KeyCode: Enum.KeyCode) : boolean
     self._Queue:remove(table.find(self._Queue.list, KeyCode))
+
     print(self._Queue)
     return true
 end
@@ -130,7 +122,12 @@ end
 
 if self._Queue.list[1] == nil then
     self.MoveVector = Vector3.new(0,0,0)
-   -- CharacterCL.FacingDirection =  self.MoveVector.X * RightVector *  self.MoveVector.Z * self.currentLookVector
+    if self.CurrentTypeCam == "Normal" then
+    
+        CharacterCL.FacingDirection =  self.MoveVector.X * RightVector + self.MoveVector.Z * self.currentLookVector
+        else
+            CharacterCL.FacingDirection =  self.currentLookVector
+    end
     CharacterCL.MovingDirection =  self.MoveVector.X * RightVector + self.MoveVector.Z * self.currentLookVector
     
 return
@@ -145,7 +142,12 @@ MoveVector.X = self.QueueSettingsDirection[self._Queue.list[1]][self.CurrentType
 checkedvector = true
 self.MoveVector = Vector3.new(MoveVector.X,0,MoveVector.Z)
 CharacterCL.MovingDirection =   self.MoveVector.X * RightVector +  self.MoveVector.Z * self.currentLookVector
---CharacterCL.FacingDirection =  self.MoveVector.X * RightVector *  self.MoveVector.Z * self.currentLookVector
+if self.CurrentTypeCam == "Normal" then
+    
+    CharacterCL.FacingDirection =  self.MoveVector.X * RightVector + self.MoveVector.Z * self.currentLookVector
+    else
+        CharacterCL.FacingDirection =  self.currentLookVector
+end
 return
 elseif self.QueueAssignedVector[self._Queue.list[1]] == "Z" then
 
@@ -153,7 +155,12 @@ elseif self.QueueAssignedVector[self._Queue.list[1]] == "Z" then
     checkedvector = true
     self.MoveVector = Vector3.new(MoveVector.X,0,MoveVector.Z)
     CharacterCL.MovingDirection =  self.MoveVector.X * RightVector +  self.MoveVector.Z * self.currentLookVector
-
+    if self.CurrentTypeCam == "Normal" then
+    
+        CharacterCL.FacingDirection =  self.MoveVector.X * RightVector + self.MoveVector.Z * self.currentLookVector
+        else
+            CharacterCL.FacingDirection =  self.currentLookVector
+    end
     return
 end
 
@@ -198,7 +205,15 @@ print("test")
 self.MoveVector = Vector3.new(MoveVector.X,0,MoveVector.Z)
 
 CharacterCL.MovingDirection =   self.MoveVector.X * RightVector +  self.MoveVector.Z * self.currentLookVector
---CharacterCL.FacingDirection =  self.MoveVector.X * RightVector *  self.MoveVector.Z * self.currentLookVector
+
+if self.CurrentTypeCam == "Normal" then
+    
+    CharacterCL.FacingDirection =  self.MoveVector.X * RightVector + self.MoveVector.Z * self.currentLookVector
+    else
+        CharacterCL.FacingDirection =  self.currentLookVector
+end
+
+
 return
 
 end    
@@ -207,11 +222,6 @@ end
 
 function MovementClass:Start(CharacterCL: ControllerManager)
     
-self.Character.Name = game.Players.LocalPlayer.Name
-
-game.Players.LocalPlayer.Character:Destroy()
-
-game.Players.LocalPlayer.Character = self.Character
 
 
 
@@ -248,6 +258,19 @@ UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
 
     
 end)
+
+end
+
+function MovementClass:Destroy()
+    
+
+local Temp_Table = {}
+
+for index, value in self do
+    print(index, value)
+    self[index] = nil
+end
+
 
 end
 

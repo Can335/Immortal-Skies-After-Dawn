@@ -2,7 +2,9 @@ game.Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 local test = require(script.__index.MovementClass)
 local Testen = require(script.__index.CameraClass)
 local fd = require(script.__index.RespawnClass)
-task.wait(5)
+
+local ff = fd.New()
+ff:ConnectClient()
 
 --[[game.Players.PlayerAdded:Connect(function(player)
     
@@ -44,3 +46,4 @@ bedc:ChangeKeys({
 task.wait()
 
 key.StartBinding()]]
+
